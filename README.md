@@ -46,6 +46,28 @@ preco-imoveis-sp/
 * Implementação da técnica de **Target Encoding (Mean Encoding)** na variável categórica `bairro`. 
 * Substituição do texto livre pela média do preço por metro quadrado da região, permitindo que os algoritmos compreendam o peso socioeconômico da localização em uma única dimensão numérica, evitando a inflação de colunas no dataset (*One-Hot Encoding*).
 
+## 🤖 5. Modelagem Preditiva e Arena de Algoritmos
+
+Para encontrar a melhor solução de precificação para o mercado imobiliário de São Paulo, o projeto evitou a abordagem comum de testar apenas um algoritmo. Foi construída uma **Arena de Modelos** testando 6 abordagens de 3 famílias matemáticas distintas (Modelos Lineares, Árvores/Ensembles e Proximidade Espacial).
+
+A base de dados foi dividida estritamente em **80% para Treino (72.993 imóveis)** e **20% para Teste (18.249 imóveis)** para garantir a robustez da validação.
+
+### 📊 Placar Geral de Performance (Métricas de Teste)
+
+| Modelo | Família do Algoritmo | MAE (Erro Médio Absoluto) | $R^2$ Score (Poder de Explicação) | Resultado / Diagnóstico Técnico |
+| :--- | :--- | :--- | :--- | :--- |
+| **Regressão Linear** | Linear Pura | R$ 332,834.24 | 58.99% | *Baseline*. Errou feio em imóveis extremos e gerou preços negativos na base. |
+| **Ridge Regression** | Linear com Regularização L2 | R$ 332,834.24 | 58.99% | Empate com a baseline. O dataset bem tratado não sofria de multicolinearidade. |
+| **Árvore de Decisão** | Árvore Simples | R$ 221,732.21 | 66.41% | Corrigiu os preços negativos fatiando o mercado em regras lógicas não-lineares. |
+| **XGBoost Regressor** | Boosting Sequencial | R$ 225,859.11 | 68.21% | Performance inferior às outras árvores devido à baixa dimensionalidade (poucas colunas) e sensibilidade a hiperparâmetros padrão. |
+| **Random Forest** | Ensemble (Bagging) | R$ 210,723.36 | **74.38% (Campeão)** | **Melhor desempenho estatístico global**. A combinação de 100 árvores amaciou os erros e explicou melhor as variações do mercado. |
+| **KNN Regressor** | Proximidade Espacial | **R$ 206,077.18 (Campeão)** | 73.59% | **Melhor desempenho de negócio**. Erra, em média, R$ 4.600,00 a menos por imóvel que o Random Forest ao espelhar o comportamento de um corretor humano. |
+
+### 🏆 Decisão de Engenharia e Persistência
+
+Diante do empate técnico com nuances de negócio, **ambos os modelos campeões (Random Forest e KNN Regressor) foram persistidos em disco utilizando a biblioteca `joblib`** (otimizada para grandes matrizes numéricas). 
+
+A escolha final do modelo para o ambiente de produção dependerá da estratégia da empresa: priorizar a estabilidade estatística global (Random Forest) ou focar na redução do erro médio direto no bolso do cliente (KNN).
 ---
 
 ## 🛠️ Tecnologias Utilizadas
@@ -54,13 +76,6 @@ preco-imoveis-sp/
 * **Manipulação de Dados:** Pandas, NumPy
 * **Visualização Gráfica:** Matplotlib, Seaborn
 * **Versionamento:** Git & GitHub
-
----
-
-## 🔮 Próximos Passos (Fase 5)
-* Divisão dos dados em conjuntos de Treino e Teste.
-* Treinamento e validação cruzada de algoritmos de Regressão (Regressão Linear, Árvores de Decisão, Random Forest).
-* Avaliação de performance utilizando métricas de mercado ($R^2$, MAE, RMSE).
 
 ---
 Análise desenvolvida por **Rafael Bezerra do Vale** [Acompanhe meu progresso no LinkedIn](https://www.linkedin.com/) _(Insira o link do seu perfil aqui)_
