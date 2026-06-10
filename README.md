@@ -13,17 +13,19 @@ O projeto foi estruturado seguindo as melhores práticas de Engenharia de Softwa
 
 preco-imoveis-sp/
 ├── data/
-│   ├── raw/          # Base de dados original (housing_sp_city.csv)
-│   └── processed/    # Base limpa (vendas_sp_limpo.csv) pós-saneamento
+│   ├── raw/                  # Base de dados original (housing_sp_city.csv)
+│   └── processed/            # Bases limpas pós-saneamento
+│       ├── vendas_sp_limpo.csv
+│       └── locacao_sp_limpo.csv
 ├── notebooks/
-│   └── 01_precificacao_vendas.ipynb  # Pipeline da Fase 1 à Fase 4
-├── src/              # Código-fonte modularizado do projeto
-│   ├── __init__.py   # Inicializador do pacote Python
-│   └── utils.py      # Funções auxiliares (como a de formatação de métricas)
-├── .gitignore        # Bloqueio de arquivos temporários e caches
-├── requirements.txt  # Bibliotecas necessárias (pandas, seaborn, etc.)
-└── README.md         # Documentação principal do projeto
-
+│   ├── 01_precificacao_vendas.ipynb   # Pipeline de Vendas
+│   └── 02_precificacao_locacao.ipynb  # Pipeline de Locação (Fase 5 à 11)
+├── src/                      # Código-fonte modularizado do projeto
+│   ├── __init__.py           # Inicializador do pacote Python
+│   └── utils.py              # Funções auxiliares de formatação e métricas
+├── .gitignore                # Bloqueio de arquivos temporários e caches
+├── requirements.txt          # Bibliotecas necessárias (pandas, scikit-learn, etc.)
+└── README.md                 # Documentação principal do projeto
 
 * **`data/`**: Divisão entre dados brutos (`raw/`) e dados limpos prontos para modelagem (`processed/`).
 * **`notebooks/`**: Arquivos Jupyter organizados e documentados passo a passo.
@@ -31,26 +33,22 @@ preco-imoveis-sp/
 ### 📈 Fases Concluídas do Desenvolvimento:
 
 #### 🔹 Fase 1: Saneamento e Tratamento de Outliers
-* Identificação e remoção de ruídos grotescos na base de dados (ex: imóveis anunciados com área útil de 1 m² ou valores de metro quadrado irreais).
-* Aplicação de filtros de consistência de mercado para garantir que o modelo aprenda com dados comerciais plausíveis.
+
+* Vendas: Remoção de ruídos grotescos (imóveis com 1 m² ou valores de metro quadrado irreais).
+* Locação: Identificação de distorções severas no mercado de aluguel. Foram eliminados anúncios com valores espúrios (como aluguéis de R$ 70,00 ou extremos de R$ 11 milhões) que destruiriam a capacidade de aprendizado dos algoritmos, afunilando a base para a realidade comercial de São Paulo.
 
 #### 🔹 Fase 2: Redução de Alta Cardinalidade (Regra de Pareto)
+
 * Análise de consistência textual da coluna `bairro`, que apresentava 1.561 registros únicos devido a erros de digitação e problemas de codificação (*encoding*).
 * Aplicação de um **Filtro de Frequência**, mantendo apenas bairros com no mínimo 30 imóveis cadastrados. Essa estratégia reduziu a cardinalidade para **395 bairros estáveis**, retendo **93% do volume original dos dados** (91.242 registros).
 
-#### 🔹 Fase 3: Análise Exploratória de Dados Visual (EDAV)
-* Construção de histogramas de distribuição focados na densidade real do mercado (identificando que o grosso dos anúncios em SP orbita entre R$ 300k e R$ 450k, com áreas de 50m² a 100m²).
-* Mapeamento de correlação utilizando o **Coeficiente de Pearson**, quantificando a força de associação entre a Área Útil e o Preço de Venda ($r = 0.73$, indicando uma relação positiva forte).
+#### 🔹 Fase 3: Engenharia de Recursos (Feature Engineering)
+* **Target Encoding (Mean Encoding):** Implementado na variável categórica `bairro`, substituindo o texto livre pela média do preço por metro quadrado da região. Isso permitiu capturar o peso socioeconômico da localização sem inflar a dimensionalidade do dataset (*One-Hot Encoding*).
+* **Preparação para Modelos Lineares/KNN:** Separação e isolamento de matrizes escaladas via `StandardScaler` para garantir uma competição justa entre algoritmos sensíveis à escala de distância.
 
-#### 🔹 Fase 4: Engenharia de Recursos (Feature Engineering)
-* Implementação da técnica de **Target Encoding (Mean Encoding)** na variável categórica `bairro`. 
-* Substituição do texto livre pela média do preço por metro quadrado da região, permitindo que os algoritmos compreendam o peso socioeconômico da localização em uma única dimensão numérica, evitando a inflação de colunas no dataset (*One-Hot Encoding*).
+## 🤖 4. Modelagem Preditiva e Arena de Algoritmos
 
-## 🤖 5. Modelagem Preditiva e Arena de Algoritmos
-
-Para encontrar a melhor solução de precificação para o mercado imobiliário de São Paulo, o projeto evitou a abordagem comum de testar apenas um algoritmo. Foi construída uma **Arena de Modelos** testando 6 abordagens de 3 famílias matemáticas distintas (Modelos Lineares, Árvores/Ensembles e Proximidade Espacial).
-
-A base de dados foi dividida estritamente em **80% para Treino (72.993 imóveis)** e **20% para Teste (18.249 imóveis)** para garantir a robustez da validação.
+O projeto evitou a abordagem comum de testar apenas um algoritmo. Foi construída uma Arena de Modelos testando diferentes abordagens de 3 famílias matemáticas distintas (Modelos Lineares, Árvores/Ensembles e Proximidade Espacial). A base de dados foi dividida estritamente em 80% para Treino and 20% para Teste.
 
 ### 📊 Placar Geral de Performance (Métricas de Teste)
 
@@ -63,12 +61,25 @@ A base de dados foi dividida estritamente em **80% para Treino (72.993 imóveis)
 | **Random Forest** | Ensemble (Bagging) | R$ 210,723.36 | **74.38% (Campeão)** | **Melhor desempenho estatístico global**. A combinação de 100 árvores amaciou os erros e explicou melhor as variações do mercado. |
 | **KNN Regressor** | Proximidade Espacial | **R$ 206,077.18 (Campeão)** | 73.59% | **Melhor desempenho de negócio**. Erra, em média, R$ 4.600,00 a menos por imóvel que o Random Forest ao espelhar o comportamento de um corretor humano. |
 
-### 🏆 Decisão de Engenharia e Persistência
+Decisão de Engenharia (Vendas): Ambos os modelos campeões (Random Forest e KNN Regressor) foram salvos em disco via joblib para avaliação de cenários em produção.
 
-Diante do empate técnico com nuances de negócio, **ambos os modelos campeões (Random Forest e KNN Regressor) foram persistidos em disco utilizando a biblioteca `joblib`** (otimizada para grandes matrizes numéricas). 
+## 🏁 Painel Geral de Experimentos (Benchmarking de Modelos) -> Locação
 
-A escolha final do modelo para o ambiente de produção dependerá da estratégia da empresa: priorizar a estabilidade estatística global (Random Forest) ou focar na redução do erro médio direto no bolso do cliente (KNN).
----
+Após testarmos individualmente diferentes famílias de algoritmos para o problema de precificação de locação, consolidamos os resultados na tabela abaixo, ordenados do melhor para o pior desempenho (baseado no R² Score):
+
+| Posição | Modelo | Estratégia | MAE (Erro Médio) | R² Score (Explicação) |
+| :---: | :--- | :--- | :--- | :--- |
+| 🥇 **1º** | **Random Forest Regressor** | Bagging Ensemble | **R$ 1.753,04** | **0.7211** |
+| 🥈 **2º** | XGBoost Regressor | Gradient Boosting | R$ 1.932,64 | 0.7124 |
+| 🥉 **3º** | KNN Regressor | Vizinhança (Dados Escalados) | R$ 1.998,41 | 0.6817 |
+| 4º | Árvore de Decisão Solo | Quebras Lógicas | R$ 2.012,06 | 0.6264 |
+| 5º | Ridge Regression | Linear com Regularização L2 | R$ 3.402,02 | 0.2347 |
+| 6º | Regressão Linear | Linear Simples (Baseline) | R$ 6.506,09 | -1.0343 |
+
+### 🧠 Conclusões Técnicas do Experimento:
+1. **Superioridade dos Ensembles:** Os modelos baseados em múltiplas árvores (Random Forest e XGBoost) dominaram o topo, provando que a combinação de estimadores reduz drasticamente o erro em dados complexos de mercado imobiliário.
+2. **Fracasso Linear:** A incapacidade da Regressão Linear tradicional em modelar o problema (gerando R² negativo) confirma que a relação entre localização, área e preço em São Paulo é estritamente não-linear.
+3. **Escolha Final:** O **Random Forest** foi eleito o modelo de produção por apresentar o menor erro absoluto médio (MAE), garantindo uma economia de quase R$ 180,00 por previsão em relação ao XGBoost.
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -78,5 +89,4 @@ A escolha final do modelo para o ambiente de produção dependerá da estratégi
 * **Versionamento:** Git & GitHub
 
 ---
-Análise desenvolvida por **Rafael Bezerra do Vale** [Acompanhe meu progresso no LinkedIn](https://www.linkedin.com/) _(Insira o link do seu perfil aqui)_
 Developed by **Rafael Bezerra do Vale** Data Scientist | Machine Learning Specialist
