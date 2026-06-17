@@ -8,7 +8,7 @@ Este projeto desenvolve um pipeline completo de Ciência de Dados e Inteligênci
 
 
 O projeto foi estruturado seguindo as melhores práticas de Engenharia de Software e Data Science de nível Sênior. 
-
+```text
 ### 📁 Estrutura de Pastas do Repositório:
 
 ├── data/
@@ -29,6 +29,7 @@ O projeto foi estruturado seguindo as melhores práticas de Engenharia de Softwa
 ├── requirements.txt          # Ambiente completo de desenvolvimento local (Jupyter, Gráficos)
 ├── requirements_docker.txt   # Dependências enxutas exclusivas para produção Docker
 └── README.md                 # Documentação principal do projeto
+```
 
 * **`data/`**: Divisão entre dados brutos (`raw/`) e dados limpos prontos para modelagem (`processed/`).
 * **`notebooks/`**: Arquivos Jupyter organizados e documentados passo a passo.
